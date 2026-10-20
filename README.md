@@ -11,6 +11,9 @@ It is version 7 of the legacy project xflr5.
 - Continue to clean the code and to improve the API 
 - Clean the documentation
 
+# MCP server
+flow5-mcp is a Model Context Protocol server. It lets AI assistants such as Claude create foils and planes, run XFoil, LLT, VLM and panel analyses, and read the results. See [flow5-mcp/README.md](flow5-mcp/README.md).
+
 # API 
 
 ## Implementation
