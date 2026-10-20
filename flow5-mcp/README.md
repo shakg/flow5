@@ -35,16 +35,92 @@ The `Dockerfile` at the repository root builds the libraries and the server on D
 docker build -t flow5-mcp .
 ```
 
-Run it with `-i` so stdin stays open. Mount a directory at the same path inside the container, so that file paths in `project_save`, `project_load` and the import/export tools mean the same thing on both sides. Pass `--user` so saved files belong to you:
+Clients start the container with `docker run -i`, which keeps stdin open. See [With Docker](#with-docker) for each client's configuration.
+
+## Configure a client
+
+### With Docker
+
+Every client runs the same command:
+
+```sh
+docker run -i --rm --user 1000:1000 \
+    -v /home/you/flow5-projects:/home/you/flow5-projects -w /home/you/flow5-projects flow5-mcp
+```
+
+- `-i` keeps stdin open. Without it the server exits at once.
+- The volume mounts a host directory at the same path inside the container, so file paths in `project_save`, `project_load` and the import/export tools mean the same thing on both sides. The server only sees files in that directory.
+- `--user` makes saved files belong to you rather than root. Use the output of `id -u` and `id -g`.
+
+JSON config files don't expand `$HOME` or `$(id -u)`, so the examples below spell out `/home/you` and `1000:1000`. Replace them with your own values.
+
+Claude Code:
 
 ```sh
 claude mcp add flow5 --scope user -- docker run -i --rm --user "$(id -u):$(id -g)" \
     -v "$HOME/flow5-projects:$HOME/flow5-projects" -w "$HOME/flow5-projects" flow5-mcp
 ```
 
-For Claude Desktop and other clients, set `"command": "docker"` and put the same arguments in `"args"`, with `$HOME` and the ids written out.
+Claude Desktop (`claude_desktop_config.json`), Cursor (`~/.cursor/mcp.json` or `.cursor/mcp.json`) and Windsurf (`~/.codeium/windsurf/mcp_config.json`):
 
-## Configure a client
+```json
+{
+  "mcpServers": {
+    "flow5": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "--user", "1000:1000",
+               "-v", "/home/you/flow5-projects:/home/you/flow5-projects",
+               "-w", "/home/you/flow5-projects",
+               "flow5-mcp"]
+    }
+  }
+}
+```
+
+VS Code (`.vscode/mcp.json`, or `MCP: Open User Configuration` from the command palette):
+
+```json
+{
+  "servers": {
+    "flow5": {
+      "type": "stdio",
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "--user", "1000:1000",
+               "-v", "/home/you/flow5-projects:/home/you/flow5-projects",
+               "-w", "/home/you/flow5-projects",
+               "flow5-mcp"]
+    }
+  }
+}
+```
+
+opencode (`~/.config/opencode/opencode.json`; the desktop app and the CLI share it). The command and its arguments go in one array:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "flow5": {
+      "type": "local",
+      "command": ["docker", "run", "-i", "--rm", "--user", "1000:1000",
+                  "-v", "/home/you/flow5-projects:/home/you/flow5-projects",
+                  "-w", "/home/you/flow5-projects",
+                  "flow5-mcp"],
+      "enabled": true
+    }
+  }
+}
+```
+
+Restart the client after editing its configuration. `claude mcp list` and `opencode mcp list` show whether the server connected. To call the tools by hand, run the [MCP Inspector](https://github.com/modelcontextprotocol/inspector):
+
+```sh
+npx @modelcontextprotocol/inspector docker run -i --rm flow5-mcp
+```
+
+After changing the flow5 sources, run `docker build -t flow5-mcp .` again. Clients use the new image the next time they start the server.
+
+### With a native build
 
 Claude Code:
 
@@ -64,6 +140,8 @@ Claude Desktop (`claude_desktop_config.json`):
   }
 }
 ```
+
+Other clients take the same command and arguments, in the formats shown above.
 
 If the flow5 shared libraries are not installed system-wide, add `"env": {"LD_LIBRARY_PATH": "/path/flow5-lib:/path/flow5-io-lib:/path/XFoil-lib"}` (on macOS use `DYLD_LIBRARY_PATH`; on Windows put the DLLs next to the executable).
 
