@@ -25,7 +25,24 @@ cmake -S flow5-mcp -B build-mcp -DFLOW5_LIB_DIRS="/path/flow5-lib;/path/flow5-io
 cmake --build build-mcp
 ```
 
-Dependencies are the same as flow5-io-lib's: QtCore, OpenCASCADE and gmsh. JSON is handled with QtCore, so nothing else is needed.
+Dependencies are the same as flow5-io-lib's: QtCore, OpenCASCADE (7.8 or later) and gmsh. JSON is handled with QtCore, so nothing else is needed.
+
+### Docker
+
+The `Dockerfile` at the repository root builds the libraries and the server on Debian trixie, so nothing has to be installed on the host:
+
+```sh
+docker build -t flow5-mcp .
+```
+
+Run it with `-i` so stdin stays open. Mount a directory at the same path inside the container, so that file paths in `project_save`, `project_load` and the import/export tools mean the same thing on both sides. Pass `--user` so saved files belong to you:
+
+```sh
+claude mcp add flow5 --scope user -- docker run -i --rm --user "$(id -u):$(id -g)" \
+    -v "$HOME/flow5-projects:$HOME/flow5-projects" -w "$HOME/flow5-projects" flow5-mcp
+```
+
+For Claude Desktop and other clients, set `"command": "docker"` and put the same arguments in `"args"`, with `$HOME` and the ids written out.
 
 ## Configure a client
 

@@ -1,0 +1,11 @@
+.git
+flow5-app
+API_examples
+meta
+**/objects
+**/moc
+**/rcc
+**/Makefile
+**/*.so*
+**/*.o
+flow5-mcp/flow5-mcp
